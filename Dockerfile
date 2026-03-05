@@ -2,9 +2,10 @@ FROM node:20-bookworm-slim
 
 WORKDIR /app
 
-# Chromium + deps for Puppeteer
+# Build deps for native addons + Chromium for Puppeteer
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3 make g++ \
+    python3 make g++ pkg-config \
+    libsqlite3-dev \
     chromium \
     ca-certificates \
     fonts-liberation \
@@ -32,9 +33,10 @@ ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 # Enable pnpm via corepack
 RUN corepack enable
 
-# Install dependencies using pnpm lockfile
+# Install dependencies (ensure scripts run so native modules compile)
 COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile --prod
+RUN pnpm install --frozen-lockfile --prod --ignore-scripts=false
+RUN pnpm rebuild better-sqlite3
 
 # Copy backend source (extension excluded by .dockerignore)
 COPY . .
