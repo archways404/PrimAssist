@@ -5,7 +5,7 @@ import { parseDebugOptions } from "./functions/helpers.js";
 import { createLogger } from "./functions/log.js";
 import { getBearerToken } from "./functions/token.js";
 import registerCors from "./plugins/cors.js";
-import registerSqlite from "./plugins/sqlite.js";
+import registerStatsFile from "./plugins/statsFile.js";
 
 async function main() {
 	dotenv.config();
@@ -27,7 +27,7 @@ async function main() {
 	});
 
 	await app.register(registerCors);
-	await app.register(registerSqlite);
+	await app.register(registerStatsFile);
 	log.info("stats exists:", Boolean(app.stats));
 
 	// Attach shared objects so routes can use them
