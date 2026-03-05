@@ -54,3 +54,6 @@ dkms.conf
 .env
 /extension/dist
 /extension/node_modules
+data/stats.sqlite
+data/stats.sqlite-shm
+data/stats.sqlite-wal

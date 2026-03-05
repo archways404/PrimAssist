@@ -1,16 +1,11 @@
 import dotenv from "dotenv";
 import Fastify from "fastify";
 import registerEndpoints from "./endpoints/index.js";
-import {
-	graphRequestExternalUserID,
-	graphRequestSchedule,
-	graphRequestUserID,
-} from "./functions/fetch.js";
-import { filterPersonalShifts } from "./functions/filterdata.js";
 import { parseDebugOptions } from "./functions/helpers.js";
 import { createLogger } from "./functions/log.js";
-import { getBearerToken, isTokenValid } from "./functions/token.js";
+import { getBearerToken } from "./functions/token.js";
 import registerCors from "./plugins/cors.js";
+import registerSqlite from "./plugins/sqlite.js";
 
 async function main() {
 	dotenv.config();
@@ -28,10 +23,12 @@ async function main() {
 	log.info("Debug options:", debugOpts);
 
 	const app = Fastify({
-		logger: false, // you already have your own logger
+		logger: false,
 	});
 
 	await app.register(registerCors);
+	await app.register(registerSqlite);
+	log.info("stats exists:", Boolean(app.stats));
 
 	// Attach shared objects so routes can use them
 	app.decorate("logx", log);
@@ -42,21 +39,33 @@ async function main() {
 
 	app.decorate("isReady", false);
 
-	// Block requests until ready (except health endpoints)
-	app.addHook("onRequest", async (req, reply) => {
-		if (req.url.startsWith("/health")) return;
-		if (req.method === "OPTIONS") return;
+	await app.register(registerEndpoints);
 
-		if (!app.isReady) {
-			return reply.code(503).send({
-				ok: false,
-				ready: false,
-				reason: "starting_up",
-			});
-		}
+	// readiness gate
+	app.addHook("onRequest", async (req, reply) => {
+	if (req.url.startsWith("/health")) return;
+	if (req.method === "OPTIONS") return;
+
+	if (!app.isReady) {
+		return reply.code(503).send({
+		ok: false,
+		ready: false,
+		reason: "starting_up",
+		});
+	}
 	});
 
-	await app.register(registerEndpoints);
+	// count usage (after route is known)
+	app.addHook("onResponse", async (req, reply) => {
+	if (req.url.startsWith("/health")) return;
+	if (req.method === "OPTIONS") return;
+
+	const route =
+		(req.routeOptions && req.routeOptions.url) ||
+		req.url.split("?")[0];
+
+	app.stats.inc({ route, method: req.method });
+	});
 
 	await app.listen({ port, host });
 	log.info(`Fastify listening on http://${host}:${port}`);
@@ -72,27 +81,6 @@ async function main() {
 			// keep isReady=false -> endpoints will return 503 (except /health)
 		}
 	})();
-
-	/*
-	const BearerToken = await fetchJWT(mau_id, pwd, mfa_secret, debugOpts);
-	log.info("Got bearer token");
-
-	const UserID = await graphRequestUserID(BearerToken, log);
-	log.verbose("userid:", UserID);
-
-	const data = await graphRequestSchedule(BearerToken, log);
-
-	const MAU_EMAIL = process.env.MAU_EMAIL;
-	const MAU_EMAIL_ID = await graphRequestExternalUserID(
-		BearerToken,
-		MAU_EMAIL,
-		log,
-	);
-	log.info("MAU_EMAIL_ID: ", MAU_EMAIL_ID);
-
-	const filteredData = filterPersonalShifts(data, UserID);
-	log.trace("filteredData:", filteredData);
-	*/
 }
 
 main().catch((e) => {

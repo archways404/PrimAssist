@@ -21,8 +21,10 @@
 	"dependencies": {
 		"@fastify/cors": "^11.2.0",
 		"@js-temporal/polyfill": "^0.5.1",
+		"better-sqlite3": "^12.6.2",
 		"dotenv": "^17.2.4",
 		"fastify": "^5.7.4",
+		"fastify-plugin": "^5.1.0",
 		"puppeteer": "^24.36.1",
 		"totp-generator": "^2.0.1"
 	},

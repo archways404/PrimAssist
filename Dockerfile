@@ -4,6 +4,7 @@ WORKDIR /app
 
 # Chromium + deps for Puppeteer
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 make g++ \
     chromium \
     ca-certificates \
     fonts-liberation \

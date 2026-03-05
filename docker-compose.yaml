@@ -1,5 +1,5 @@
 services:
-    maulazyteams:
+    primassist:
         build: .
         restart: unless-stopped
         environment:
@@ -16,3 +16,5 @@ services:
             PUPPETEER_EXECUTABLE_PATH: "/usr/bin/chromium"
         ports:
             - "4007:4007"
+        volumes:
+            - primassist-data:/data

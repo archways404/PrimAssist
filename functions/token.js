@@ -15,32 +15,48 @@ export function invalidateTokenCache() {
 }
 
 export function isTokenValid() {
-	return tokenCache.token && Date.now() < tokenCache.expiresAtMs - 30_000;
+  return Boolean(tokenCache.token) && Date.now() < tokenCache.expiresAtMs - 30_000;
 }
+
+let refreshPromise = null;
 
 // Pass a single options object to keep it clean
 export async function getBearerToken({ log, debugOpts }) {
-	if (isTokenValid()) {
-		log?.verbose?.("Using cached bearer token");
-		return tokenCache.token;
-	}
+  if (isTokenValid()) {
+    log?.verbose?.("Using cached bearer token");
+    return tokenCache.token;
+  }
 
-	const mau_id = process.env.MAU_ID;
-	const pwd = process.env.MAU_PWD;
-	const mfa_secret = process.env.MFA_SECRET;
+  // If a refresh is already running, await it instead of starting another
+  if (refreshPromise) {
+    log?.verbose?.("Awaiting in-flight token refresh");
+    return refreshPromise;
+  }
 
-	if (!mau_id || !pwd) throw new Error("Missing MAU_ID or MAU_PWD in .env");
+  const mau_id = process.env.MAU_ID;
+  const pwd = process.env.MAU_PWD;
+  const mfa_secret = process.env.MFA_SECRET;
+  if (!mau_id || !pwd) throw new Error("Missing MAU_ID or MAU_PWD in .env");
 
-	log?.info?.("Refreshing bearer token...");
+  refreshPromise = (async () => {
+  try {
+    log?.info?.("Refreshing bearer token...");
+    const token = await fetchJWT(mau_id, pwd, mfa_secret, debugOpts, log);
 
-	const token = await fetchJWT(mau_id, pwd, mfa_secret, debugOpts, log);
+    tokenCache.token = token;
+    const expMs = expiryFromJwt(token);
+    tokenCache.expiresAtMs = expMs || Date.now() + 45 * 60 * 1000;
 
-	// Conservative TTL unless you decode exp properly
-	tokenCache.token = token;
-	const expMs = expiryFromJwt(token);
-	tokenCache.expiresAtMs = expMs || Date.now() + 45 * 60 * 1000;
+    return token;
+  } catch (e) {
+    invalidateTokenCache();
+    throw e;
+  } finally {
+    refreshPromise = null;
+  }
+})();
 
-	return token;
+  return refreshPromise;
 }
 
 function decodeJwtPayload(token) {
