@@ -40,10 +40,6 @@ RUN pnpm --version && pnpm config get ignore-scripts || true
 
 RUN pnpm install --frozen-lockfile --prod --ignore-scripts=false
 
-RUN pnpm rebuild better-sqlite3 --verbose
-
-RUN node -e "require('better-sqlite3'); console.log('better-sqlite3 OK')"
-
 COPY . .
 
 ENV PORT=4007
