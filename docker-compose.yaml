@@ -10,6 +10,7 @@ services:
             MAU_PWD: "${MAU_PWD}"
             MFA_SECRET: "${MFA_SECRET}"
             MAU_EMAIL: "${MAU_EMAIL}"
+            DATA_DIR: "/data"
 
             IN_DOCKER: "true"
             PUPPETEER_SKIP_DOWNLOAD: "true"
@@ -18,3 +19,6 @@ services:
             - "4007:4007"
         volumes:
             - primassist-data:/data
+
+volumes:
+    primassist-data:
