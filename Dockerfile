@@ -2,7 +2,6 @@ FROM node:20-bookworm-slim
 
 WORKDIR /app
 
-# Build deps for native addons + Chromium for Puppeteer
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 make g++ pkg-config \
     libsqlite3-dev \
@@ -30,15 +29,26 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 ENV PUPPETEER_SKIP_DOWNLOAD=true
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
-# Enable pnpm via corepack
+# Force scripts ON even if Coolify injects ignore-scripts via env
+ENV NPM_CONFIG_IGNORE_SCRIPTS=false
+ENV PNPM_IGNORE_SCRIPTS=false
+
 RUN corepack enable
 
-# Install dependencies (ensure scripts run so native modules compile)
 COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile --prod --ignore-scripts=false
-RUN pnpm rebuild better-sqlite3
 
-# Copy backend source (extension excluded by .dockerignore)
+# Show effective config (helps debug)
+RUN pnpm --version \
+ && pnpm config get ignore-scripts || true
+
+RUN pnpm install --frozen-lockfile --prod --ignore-scripts=false
+
+# Force-build native addon and print logs
+RUN pnpm rebuild better-sqlite3 --verbose
+
+# Verify the binding exists (fail build if missing)
+RUN node -e "require('better-sqlite3'); console.log('better-sqlite3 OK')"
+
 COPY . .
 
 ENV PORT=4007
