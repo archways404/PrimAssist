@@ -13,13 +13,15 @@ export default async function registerCors(app) {
 				origin.startsWith('moz-extension://') ||
 				origin.startsWith('chrome-extension://') ||
 				origin.startsWith('http://localhost') ||
+				origin.startsWith('*') ||
 				origin.startsWith('http://127.0.0.1')
 			) {
 				return cb(null, true);
 			}
 
 			// deny everything else by default
-			return cb(new Error('Not allowed by CORS'), false);
+			//return cb(new Error('Not allowed by CORS'), false);
+			return cb(null, allowed);
 		},
 		credentials: true,
 		methods: ['GET', 'POST', 'OPTIONS'],
