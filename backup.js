@@ -1,7 +1,7 @@
-import { Temporal } from "@js-temporal/polyfill";
+import { Temporal } from '@js-temporal/polyfill';
 
 // helper
-const TZ = "Europe/Stockholm";
+const TZ = 'Europe/Stockholm';
 
 function formatPersonalShiftTemporal(shift) {
 	const s = shift.sharedShift ?? shift.draftShift;
@@ -17,15 +17,13 @@ function formatPersonalShiftTemporal(shift) {
 
 	const date = startZoned.toPlainDate().toString(); // "2026-02-24"
 
-	const startTime = startZoned
-		.toPlainTime()
-		.toString({ smallestUnit: "minute" });
-	const endTime = endZoned.toPlainTime().toString({ smallestUnit: "minute" });
+	const startTime = startZoned.toPlainTime().toString({ smallestUnit: 'minute' });
+	const endTime = endZoned.toPlainTime().toString({ smallestUnit: 'minute' });
 
 	// Duration math
 	const duration = endInstant.since(startInstant).round({
-		largestUnit: "hours",
-		smallestUnit: "minutes",
+		largestUnit: 'hours',
+		smallestUnit: 'minutes',
 	});
 
 	const hours = duration.hours;
@@ -34,7 +32,7 @@ function formatPersonalShiftTemporal(shift) {
 	const timeSummary = minutes === 0 ? `${hours}h` : `${hours}h ${minutes}m`;
 
 	return {
-		shift: s.notes ?? "",
+		shift: s.notes ?? '',
 		date,
 		timeSummary,
 		start: startTime,
@@ -54,7 +52,7 @@ function formatPersonalShiftText(shift) {
 		`TimeSummary: ${f.timeSummary}`,
 		`Start: ${f.start}`,
 		`End: ${f.end}`,
-	].join("\n");
+	].join('\n');
 }
 
 function formatPersonalShifts(shifts) {
@@ -119,18 +117,15 @@ function parseHoursToDecimal(timeString) {
 }
 
 const formattedData = formatPersonalShifts(filteredData);
-log.trace("formattedData:", formattedData);
+log.trace('formattedData:', formattedData);
 // Pretty print
-log.info(formattedData.join("\n\n"));
+log.info(formattedData.join('\n\n'));
 
-const thisMonthFormattedData = filterShiftsByPeriod(
-	filteredData,
-	currentMonthFilter(),
-);
+const thisMonthFormattedData = filterShiftsByPeriod(filteredData, currentMonthFilter());
 const thisMonthFormattedShifts = formatPersonalShifts(thisMonthFormattedData);
-log.info(thisMonthFormattedShifts.join("\n\n"));
+log.info(thisMonthFormattedShifts.join('\n\n'));
 
-console.log(thisMonthFormattedShifts.join("\n\n"));
+console.log(thisMonthFormattedShifts.join('\n\n'));
 
 const totalHoursStr = sumFromFormattedStrings(thisMonthFormattedShifts);
 console.log(totalHoursStr);
@@ -141,5 +136,5 @@ const pretax = totalHours * 140;
 const pretax_sem = pretax * 1.12;
 const posttax = pretax_sem * 0.7;
 
-log.info("pre-tax:", pretax_sem.toFixed(0) + "kr");
-log.info("post-tax:", posttax.toFixed(0) + "kr");
+log.info('pre-tax:', pretax_sem.toFixed(0) + 'kr');
+log.info('post-tax:', posttax.toFixed(0) + 'kr');
